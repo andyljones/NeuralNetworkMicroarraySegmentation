@@ -10,5 +10,5 @@ stepsize: 20000
 display: 100
 max_iter: 400000
 snapshot: 20000
-snapshot_prefix: "temporary/caffe_models/simulated_"
+snapshot_prefix: "temporary/models/simulated"
 solver_mode: GPU
