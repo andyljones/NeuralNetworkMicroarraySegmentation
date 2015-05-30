@@ -9,8 +9,6 @@ import scipy as sp
 import caffe
 import lmdb
 import os
-import matplotlib.pyplot as plt
-import pdb
 import datetime
 import itertools as it
 

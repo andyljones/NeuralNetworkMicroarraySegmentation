@@ -8,7 +8,6 @@ Created on Sat May 30 12:28:41 2015
 import matplotlib.pyplot as plt
 import caffe
 import scipy as sp
-import hand_label_extractor
 import scipy.ndimage
 import seaborn as sns
 import skimage.morphology
@@ -46,10 +45,25 @@ def one_channel_to_color(im):
     color_im = (255*color_im).astype(sp.uint8)
     
     return color_im
+    
+def two_channel_to_color(im):
+    lower = sp.percentile(im, 5)
+    upper = sp.percentile(im, 98)   
+    
+    channel_0 = sp.clip((im[0] - lower)/(upper - lower), 0, 1)
+    channel_2 = sp.clip((im[1] - lower)/(upper - lower), 0, 1)
+    channel_1 = ((channel_0 + channel_2)/2.)
+    
+    im = sp.array((channel_0, channel_1, channel_2))
+    im = sp.rollaxis(im, 0, 3)
+    
+    im = (255*im).astype(sp.uint8)    
+    
+    return im
 
 def plot_borders(im, array, threshold=0.65, alpha=0.7, **kwargs):
     borders = find_borders(array)
-    im_with_borders = hand_label_extractor.two_channel_to_color(im)
+    im_with_borders = two_channel_to_color(im)
     im_with_borders[borders, :] = (1-alpha)*im_with_borders[borders, :] + alpha*sp.array([255, 0, 0])
     
     return ct.show_image(im_with_borders, **kwargs) 

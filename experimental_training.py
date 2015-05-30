@@ -6,13 +6,12 @@ Created on Sat May 30 12:15:32 2015
 """
 
 import scipy as sp
-import hand_label_extractor
-import experimental_io
-import caffe_tools
 import tifffile
-import scipy as sp
 import os
-import experimental_io as eio
+
+from experimental_tools import get_bounded_im, get_benchmark_im
+from visualization_tools import two_channel_to_color
+from caffe_tools import fill_database
 
 GOOD_COLOR = [255, 0, 0]
 DAMAGED_COLOR = [255, 255, 0]
@@ -22,7 +21,12 @@ UNLABELLED_SPOTTED_AREA_COLOR = [0, 0, 255]
 
 LABELS_FOLDER = 'sources/labels'
 
-LABEL_ENUM = {'inside': 1, 'outside': 0, 'inside_damaged': 2, 'outside_damaged': 0, 'block_border': 0, 'between': 0}
+LABEL_ENUM = {'inside': 1, 
+              'outside': 0, 
+              'inside_damaged': 2,
+              'outside_damaged': 0, 
+              'block_border': 0,
+              'between': 0}
 
 
 labelled_ids = ['3-12_pmt100', '3-16_pmt100']
@@ -34,24 +38,9 @@ def normalize_channel(im):
     normalized = sp.clip((im - lower)/(upper - lower), 0, 1)
     
     return normalized 
-
-def two_channel_to_color(im):
-    lower = sp.percentile(im, 5)
-    upper = sp.percentile(im, 98)   
     
-    channel_0 = sp.clip((im[0] - lower)/(upper - lower), 0, 1)
-    channel_2 = sp.clip((im[1] - lower)/(upper - lower), 0, 1)
-    channel_1 = ((channel_0 + channel_2)/2.)
-    
-    im = sp.array((channel_0, channel_1, channel_2))
-    im = sp.rollaxis(im, 0, 3)
-    
-    im = (255*im).astype(sp.uint8)    
-    
-    return im
-
 def correct_image_for_gimp(file_id):
-    im = eio.get_bounded_im(file_id, channel=-1)
+    im = get_bounded_im(file_id, channel=-1)
     im = two_channel_to_color(im)
     
     target_path = 'sources/labels/{0}_corrected.tif'.format(file_id)
@@ -150,7 +139,7 @@ def make_labelled_sets(centers, test_split=0.1):
     counts = {'inside': 100e3, 'outside': 50e3, 'inside_damaged': 100e3, 'outside_damaged': 50e3, 'block_border': 50e3, 'between': 50e3}
     choices = {name: sp.random.choice(sp.arange(centers[name].shape[1]), counts[name]) for name in centers}
     center_sets = {name: centers[name][:, choices[name]] for name in centers}
-    label_sets = {name: sp.repeat(hand_label_extractor.LABEL_ENUM[name], counts[name]) for name in centers}
+    label_sets = {name: sp.repeat(LABEL_ENUM[name], counts[name]) for name in centers}
     
     center_set = sp.concatenate([center_sets[name] for name in centers], 1)
     label_set = sp.concatenate([label_sets[name] for name in centers])
@@ -168,11 +157,11 @@ def make_labelled_sets(centers, test_split=0.1):
     return training_centers, training_labels, test_centers, test_labels
             
 def create_caffe_input_file(file_ids, channel=0, width=61):    
-    ims = [experimental_io.get_benchmark_im(file_id)[channel] for file_id in file_ids]
+    ims = [get_benchmark_im(file_id)[channel] for file_id in file_ids]
     ims = [(im - im.mean())/im.std() for im in ims]
     
-    centers = hand_label_extractor.find_centers_from_ims(file_ids)
+    centers = find_centers_from_ims(file_ids)
     training_centers, training_labels, test_centers, test_labels = make_labelled_sets(centers)
 
-    caffe_tools.fill_database('temporary/train_experimental.db', ims, training_centers, training_labels, width)
-    caffe_tools.fill_database('temporary/test_experimental.db', ims, test_centers, test_labels, width)
+    fill_database('temporary/train_experimental.db', ims, training_centers, training_labels, width)
+    fill_database('temporary/test_experimental.db', ims, test_centers, test_labels, width)

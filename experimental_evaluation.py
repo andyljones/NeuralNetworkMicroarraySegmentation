@@ -8,7 +8,6 @@ Created on Sat May 30 12:19:49 2015
     
 import scipy as sp
 #import caffe
-import experimental_io as eio
 import caffe_tools as ct
 import skimage
 import itertools as it
@@ -16,9 +15,8 @@ import scipy.ndimage
 import skimage.transform
 import cPickle
 import seaborn as sns
-import hand_label_extractor 
-import graphing_tools
 
+from experimental_tools import get_bounded_im, get_bounded_ims
 
 def get_data(file_id, channel=0):
     im = get_bounded_im(file_id, channel=channel)
@@ -38,7 +36,7 @@ sns.set_context({'figure.figsize': (18,18)})
 
 def score_images():
     classifier = ct.create_classifier(MODEL_FILE, PRETRAINED)
-    ims = eio.get_bounded_ims()
+    ims = get_bounded_ims()
     for i, (file_id, im) in enumerate(ims.items()): 
         print('Processing file {0}, {1} of {2}'.format(file_id, i+1, len(ims)))
         window_centers, score_list = ct.score_image(im, classifier)
@@ -47,7 +45,7 @@ def score_images():
 
 
 def load_score_array(file_id, channel=0):
-    im, centers, scores = eio.get_data(file_id, channel=-1)
+    im, centers, scores = get_data(file_id, channel=-1)
     score_array = ct.make_score_array(1 - scores[:, 0], centers, im.shape[1:])
     return im, score_array
     
