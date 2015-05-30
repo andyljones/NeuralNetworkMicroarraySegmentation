@@ -5,6 +5,10 @@
 *.swp
 *~
 
+# Caffe files
+*.solverstate
+*.caffemodel
+
 # Directories of artefacts
 sources/experimental/*.tif
 sources/labels/*.png
