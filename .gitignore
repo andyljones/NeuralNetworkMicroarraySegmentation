@@ -9,8 +9,10 @@
 *.solverstate
 *.caffemodel
 
-# Directories of artefacts
+
+# Artefacts
 sources/experimental/*.tif
 sources/labels/*.png
 sources/simulated/*.mat
 temporary/*.db
+*.hdf5
