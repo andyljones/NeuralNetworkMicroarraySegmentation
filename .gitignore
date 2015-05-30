@@ -7,4 +7,5 @@
 # Directories of artefacts
 sources/experimental/*.tif
 sources/labels/*.png
+sources/simulated/*.mat
 temporary/*.db
