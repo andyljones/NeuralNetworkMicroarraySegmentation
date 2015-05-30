@@ -64,7 +64,7 @@ def get_centers_single_image(truth, im_no, border=20):
     
     return results
     
-def get_centers(truths, channel=0, border=20):
+def get_centers(truths, border=20):
     centers = []
     for i, truth in enumerate(truths):
         centers.append(get_centers_single_image(truth, i, border=border))
@@ -98,7 +98,7 @@ def make_labelled_sets(centers, test_split=0.1):
     
 def create_caffe_input_file(file_ids, width=41):    
     im_padding = ((width/2, width/2), (width/2, width/2), (0, 0))
-    ims = [get_simulated_im(file_id, channel=-1)[0] for file_id in file_ids]
+    ims = [get_simulated_im(file_id)[0] for file_id in file_ids]
     ims = [(im - im.mean())/im.std() for im in ims]
     ims = [sp.pad(im, im_padding, mode='reflect') for im in ims]
     
@@ -111,3 +111,6 @@ def create_caffe_input_file(file_ids, width=41):
 
     fill_database('temporary/train_simulated.db', ims, training_centers, training_labels, width)
     fill_database('temporary/test_simulated.db', ims, test_centers, test_labels, width)
+    
+def make_training_files():
+    create_caffe_input_file(TRAINING_IDS)
