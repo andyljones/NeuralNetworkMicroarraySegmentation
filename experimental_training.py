@@ -1,26 +1,35 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat May 30 12:15:32 2015
+This module uses a set of hand-label experimental microarray images to produce a LMDB file that can be used to train a
+Caffe neural network. The main functions of interest are ``visualize_image_for_hand_labelling`` and 
+``make_training_files``.
 
-@author: andy
+To build a training set, first use ``visualize_image_for_hand_labelling`` to save out a human-interpretable image of a 
+microarray file. Then use image editing software to color the image according to the ``GOOD_COLOR``, ``DAMAGED_COLOR``,
+etc attributes. If you put the labelled images into the ``LABELS_FOLDER`` and add the corresponding file IDs 
+``LABELLED_FILE_IDS``, then calling ``make_training_files`` will construct a pair of LMDB databases that can be used to 
+train and test a Caffe classifier.
 """
 
 import scipy as sp
 import tifffile
 import os
 
-from experimental_tools import get_bounded_im, get_benchmark_im
+from experimental_tools import get_bounded_im, get_benchmark_im, WINDOW_WIDTH
 from visualization_tools import two_channel_to_color
 from caffe_tools import fill_database
 
-GOOD_COLOR = [255, 0, 0]
-DAMAGED_COLOR = [255, 255, 0]
-MISSING_COLOR = [255, 0, 255]
-LABELLED_AREA_COLOR = [0, 255, 0]
-UNLABELLED_SPOTTED_AREA_COLOR = [0, 0, 255]
+"""The colours used to hand-label different kinds of spots"""
+GOOD_COLOR = [255, 0, 0] # red, meant for pixels inside whole spots.
+DAMAGED_COLOR = [255, 255, 0] # yellow, meant for pixels inside damaged spots.
+MISSING_COLOR = [255, 0, 255] # magenta, meant for pixels at the approximate location of a spot that's extremely faint
+LABELLED_AREA_COLOR = [0, 255, 0] # green, meant for marking the border of a block of labelled spots
+UNLABELLED_SPOTTED_AREA_COLOR = [0, 0, 255] # blue, meant for marking the border of all blocks of spots that haven't been labelled.
 
+"""The folder hand-labelled images are expected to be in"""
 LABELS_FOLDER = 'sources/labels'
 
+"""The mapping from types of pixels to classifier labels"""
 LABEL_ENUM = {'inside': 1, 
               'outside': 0, 
               'inside_damaged': 1,
@@ -28,30 +37,23 @@ LABEL_ENUM = {'inside': 1,
               'block_border': 0,
               'between': 0}
 
-
 LABELLED_FILE_IDS = ['3-12_pmt100', '3-16_pmt100']
-
-def normalize_channel(im):
-    lower = sp.percentile(im, 5)
-    upper = sp.percentile(im, 95)
     
-    normalized = sp.clip((im - lower)/(upper - lower), 0, 1)
     
-    return normalized 
-    
-def correct_image_for_gimp(file_id):
+def visualize_image_for_hand_labelling(file_id):
+    """Saves out a visualization of the image ``file_id`` that's appropriate for hand-labelling"""
     im = get_bounded_im(file_id, channel=-1)
     im = two_channel_to_color(im)
     
-    target_path = 'sources/labels/{0}_corrected.tif'.format(file_id)
+    target_path = os.path.join(LABELS_FOLDER, '{}_corrected.tif'.format(file_id))
     tifffile.imsave(target_path, im)
-    
-    return im
 
 def equal_color_mask(im, color):
+    """Returns a mask indicating which pixels in ``im`` are ``color``"""
     return reduce(sp.logical_and, [im[:, :, i] == color[i] for i in range(3)])
 
 def get_hand_labels(file_id):
+    """Returns the spots and areas that have been hand labelled for ``file_id``"""
     labels_filename = file_id + '_corrected_labelled.png' 
     labels_path = os.path.join(LABELS_FOLDER, labels_filename)
     labels = sp.ndimage.imread(labels_path)
@@ -71,18 +73,23 @@ def get_hand_labels(file_id):
     return spots, areas
 
 def make_inside_mask(spots):
+    """Returns a mask indicating which pixels lie inside a good or damaged spot"""
     return spots['good'] | spots['damaged']
     
 def make_outside_mask(spots, areas):
+    """Returns a mask indicating which pixels lie outside good spots, damaged spots, or an area marked as containing 
+    spots"""
     inside = make_inside_mask(spots)
     near_inside = sp.ndimage.binary_dilation(inside, structure=sp.ones((3,3))) 
     
     return ~(near_inside | areas['unlabelled'])
     
 def make_inside_damaged_mask(spots):
+    """Returns a mask indicating which pixels lie inside damaged spots"""
     return spots['damaged']
     
 def make_outside_damaged_mask(spots, areas):
+    """Returns a mask indicating which pixels lie just outside damaged spots"""
     outside = make_outside_mask(spots, areas)
     inside_damaged = make_inside_damaged_mask(spots)
     near_damaged = sp.ndimage.binary_dilation(inside_damaged, structure=sp.ones((3,3)), iterations=8)
@@ -91,6 +98,7 @@ def make_outside_damaged_mask(spots, areas):
     return outside_near_damaged
     
 def make_block_border_mask(spots, areas):
+    """Returns a mask indicating which pixels lie just outside a block of spots"""
     inside = make_inside_mask(spots)
     outside = make_outside_mask(spots, areas)
     very_near_inside = sp.ndimage.binary_dilation(inside, structure=sp.ones((3,3)), iterations=8)
@@ -98,6 +106,7 @@ def make_block_border_mask(spots, areas):
     return near_inside & ~very_near_inside & outside
 
 def make_between_mask(spots, areas):
+    """Returns a mask indicating which pixels lie between two spots"""
     inside = make_inside_mask(spots)
     outside = make_outside_mask(spots, areas)   
     
@@ -105,7 +114,11 @@ def make_between_mask(spots, areas):
     
     return near_inside & outside
 
-def find_centers(spots, areas, border_width=32, im_num=0):
+def find_centers(spots, areas, border_width, im_num=0):
+    """Returns a dict of arrays, one for each pixel type. The arrays are compatible with caffe_tools.fill_database.
+
+    The last row of each array is equal to ``im_num``, indicating which image those centers were created from.
+    """
     indices = sp.indices(spots['good'].shape)
     indices = sp.concatenate([indices, im_num*sp.ones((1, indices.shape[1], indices.shape[2]), dtype=int)], 0)
 
@@ -122,12 +135,13 @@ def find_centers(spots, areas, border_width=32, im_num=0):
     
     return centers
 
-def find_centers_from_ims(file_ids):
-    
+def find_centers_from_ims(file_ids, width):
+    """Uses the images at ``file_ids`` to create a dict of arrays indexed by pixel type. The arrays are compatible with 
+    caffe_tools.fill_database."""
     centers = []
     for i, file_id in enumerate(file_ids):
         spots, areas = get_hand_labels(file_id)
-        centers.append(find_centers(spots, areas, im_num=i))
+        centers.append(find_centers(spots, areas, width/2, im_num=i))
     
     result = {}
     for name in centers[0]:
@@ -136,6 +150,9 @@ def find_centers_from_ims(file_ids):
     return result    
     
 def make_labelled_sets(centers, test_split=0.1):
+    """Uses a dict of arrays like those created by ``find_centers_from_ims`` to build test and training sets for training 
+    a Caffe model to distinguish different types of pixel. The arrays returned are centers and labels compatible with 
+    caffe_tools.fill_database"""
     counts = {'inside': 100e3, 'outside': 50e3, 'inside_damaged': 100e3, 'outside_damaged': 50e3, 'block_border': 50e3, 'between': 50e3}
     choices = {name: sp.random.choice(sp.arange(centers[name].shape[1]), counts[name]) for name in centers}
     center_sets = {name: centers[name][:, choices[name]] for name in centers}
@@ -156,15 +173,21 @@ def make_labelled_sets(centers, test_split=0.1):
     
     return training_centers, training_labels, test_centers, test_labels
             
-def create_caffe_input_file(file_ids, width=61):    
+def create_caffe_input_files(file_ids, width):    
+    """Creates LMDB databases containing training and test sets derived from the hand-labelled ``file_ids``. ``width``
+    is the size of the windows to use.
+    
+    The databases can be found in the ``temporary`` directory."""    
     ims = [get_benchmark_im(file_id) for file_id in file_ids]
     ims = [(im - im.mean())/im.std() for im in ims]
     
-    centers = find_centers_from_ims(file_ids)
+    centers = find_centers_from_ims(file_ids, width)
     training_centers, training_labels, test_centers, test_labels = make_labelled_sets(centers)
 
     fill_database('temporary/train_experimental.db', ims, training_centers, training_labels, width)
     fill_database('temporary/test_experimental.db', ims, test_centers, test_labels, width)
 
 def make_training_files():
-    create_caffe_input_file(LABELLED_FILE_IDS)
+    """Use the hand-labels corresponding to t``LABELLED_FILE_IDS`` to create LMDB databases containing training and test
+    sets for a Caffe neural network."""
+    create_caffe_input_files(LABELLED_FILE_IDS, WINDOW_WIDTH)
