@@ -1,0 +1,14 @@
+net: "sources/definitions/simulated_model.prototxt"
+test_iter: 100
+test_interval: 1000
+base_lr: 0.01
+momentum: 0.9
+weight_decay: 0.0001
+lr_policy: "step"
+gamma: 0.5
+stepsize: 20000
+display: 100
+max_iter: 400000
+snapshot: 20000
+snapshot_prefix: "temporary/caffe_models/simulated_"
+solver_mode: GPU
