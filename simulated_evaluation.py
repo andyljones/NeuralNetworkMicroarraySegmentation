@@ -8,7 +8,7 @@ import scipy as sp
 import h5py
 
 from simulated_tools import get_simulated_im, get_simulated_ims
-from caffe_tools import create_classifier, score_images, make_score_array
+from caffe_tools import create_classifier, score_images
 
 TEST_LOW_IDS = ['exp_low ({0})'.format(i) for i in range(25, 50)] 
 TEST_GOOD_IDS = ['exp_good ({0})'.format(i) for i in range(1, 50)]
