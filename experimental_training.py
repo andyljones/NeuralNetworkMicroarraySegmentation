@@ -23,7 +23,7 @@ LABELS_FOLDER = 'sources/labels'
 
 LABEL_ENUM = {'inside': 1, 
               'outside': 0, 
-              'inside_damaged': 2,
+              'inside_damaged': 1,
               'outside_damaged': 0, 
               'block_border': 0,
               'between': 0}
