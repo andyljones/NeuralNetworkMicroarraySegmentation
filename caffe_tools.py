@@ -11,6 +11,7 @@ import lmdb
 import os
 import datetime
 import itertools as it
+import logging
 
 def get_window(im, center, width):
     if width % 2 == 0:
@@ -67,7 +68,7 @@ def fill_database(name, ims, centers, labels, width):
             key = '{0}_{1}-{2}-{3}'.format(i, im_no, center[0], center[1])
             txn.put(key, datum.SerializeToString())
             
-            if i % 500 == 0: print(progress_report(i+1, centers.shape[1], start_time))
+            if i % 500 == 0: logging.info(progress_report(i+1, centers.shape[1], start_time))
                 
     env.close()
             
@@ -88,7 +89,7 @@ def make_score_array(score_list, window_centers, shape):
 
     return score_array
     
-def get_window_centers(im, k, width=64):
+def get_window_centers(im, k, width):
     boundary = int(sp.ceil(width/2))
     yslice = slice(boundary, im.shape[0]-boundary, k)
     xslice = slice(boundary, im.shape[1]-boundary, k)
@@ -133,9 +134,9 @@ def score_windows(window_generator, model, total_count=0):
         count_so_far = count_so_far + len(result)
         
         if total_count:
-            print(progress_report(count_so_far, total_count, start_time))
+            logging.info(progress_report(count_so_far, total_count, start_time))
         else:
-            print('Processed {0} window_centers'.format(count_so_far))
+            logging.info('Processed {0} window_centers'.format(count_so_far))
 
         
     results = sp.concatenate(results)
@@ -152,7 +153,7 @@ def masked_scores(shape, window_centers, scores):
     
     return masked_scores
     
-def score_image(im, model, k=1, width=64):
+def score_image(im, model, width, k=1):
     padding = ((width/2, width/2), (width/2, width/2), (0, 0))
     im = sp.pad(im, padding, mode='reflect')    
     
@@ -161,8 +162,9 @@ def score_image(im, model, k=1, width=64):
     window_gen = window_generator(im, window_centers, width=width)
     
     score_list = score_windows(window_gen, model, total_count=len(window_centers))
+    unpadded_window_centers = window_centers - width/2    
     
-    return window_centers, score_list
+    return unpadded_window_centers, score_list
 
 def create_classifier(model_file, pretrained):
     caffe.set_mode_gpu()
