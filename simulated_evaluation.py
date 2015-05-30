@@ -13,14 +13,14 @@ from caffe_tools import create_classifier, score_images
 TEST_LOW_IDS = ['exp_low ({0})'.format(i) for i in range(25, 50)] 
 TEST_GOOD_IDS = ['exp_good ({0})'.format(i) for i in range(1, 50)]
 
-MODEL_FILE = 'sources/definitions/simulated_deploy.prototxt'
-PRETRAINED = 'temporary/models/simulated_iter_20000.caffemodel'
+DEFINITION_PATH = 'sources/definitions/simulated_deploy.prototxt'
+MODEL_PATH = 'temporary/models/simulated_iter_20000.caffemodel'
 
 SCORES_PATH = 'temporary/scores/simulated_scores.hdf5' 
 WINDOW_WIDTH = 41
 
 def score_simulated_images():
-    classifier = create_classifier(MODEL_FILE, PRETRAINED)
+    classifier = create_classifier(DEFINITION_PATH, MODEL_PATH)
     ims, _ = get_simulated_ims()
     with h5py.File(SCORES_PATH, 'w-') as h5file:
         score_images(h5file, ims, classifier, WINDOW_WIDTH)          

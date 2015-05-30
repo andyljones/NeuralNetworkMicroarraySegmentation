@@ -18,14 +18,14 @@ from caffe_tools import create_classifier, score_images
 
 TEST_IDS = ['3-{0}_pmt100'.format(i) for i in range(13, 17)]
 
-MODEL_FILE = r'caffe_definitions/experimental_deploy.prototxt'
-PRETRAINED = 'caffe_definitions/experimental_2_384k.caffemodel'
+DEFINITION_PATH = r'caffe_definitions/experimental_deploy.prototxt'
+MODEL_PATH = 'caffe_definitions/experimental_2_384k.caffemodel'
 
 SCORES_PATH = 'temporary/scores/simulated_scores.hdf5' 
 WINDOW_WIDTH = 61
 
 def score_experimental_images():
-    classifier = create_classifier(MODEL_FILE, PRETRAINED)
+    classifier = create_classifier(DEFINITION_PATH, MODEL_PATH)
     ims = get_bounded_ims()
     with h5py.File(SCORES_PATH, 'w-') as h5file:
         score_images(h5file, ims, classifier, WINDOW_WIDTH)
