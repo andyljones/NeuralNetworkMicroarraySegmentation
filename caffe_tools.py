@@ -166,6 +166,13 @@ def score_image(im, model, width, k=1):
     
     return unpadded_window_centers, score_list
 
+def score_images(h5file, ims, classifier, window_width):
+    for i, (file_id, im) in enumerate(ims.items()): 
+        logging.info('Processing file {0}, {1} of {2}'.format(file_id, i+1, len(ims)))
+        window_centers, score_list = score_image(im, classifier, width=window_width)
+        score_array = make_score_array(window_centers, score_list[:, 1], im.shape[:2])
+        h5file[file_id] = score_array  
+
 def create_classifier(model_file, pretrained):
     caffe.set_mode_gpu()
     m = caffe.Classifier(model_file, pretrained)

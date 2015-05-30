@@ -11,41 +11,30 @@ import skimage
 import itertools as it
 import scipy.ndimage
 import skimage.transform
-import cPickle
-import seaborn as sns
+import h5py
 
 from experimental_tools import get_bounded_im, get_bounded_ims
-from caffe_tools import create_classifier, score_image, make_score_array
+from caffe_tools import create_classifier, score_images
 
-example_file_id = '3-12_pmt100'
-
-test_ids = ['3-{0}_pmt100'.format(i) for i in range(13, 17)]
+TEST_IDS = ['3-{0}_pmt100'.format(i) for i in range(13, 17)]
 
 MODEL_FILE = r'caffe_definitions/experimental_deploy.prototxt'
 PRETRAINED = 'caffe_definitions/experimental_2_384k.caffemodel'
 
-sns.set_context({'figure.figsize': (18,18)})
+SCORES_PATH = 'temporary/scores/simulated_scores.hdf5' 
+WINDOW_WIDTH = 61
 
-def get_data(file_id, channel=0):
-    im = get_bounded_im(file_id, channel=channel)
-    window_centers = sp.load('temporary/scores_0/{0}_window_centers.npy'.format(file_id))
-    score_list = sp.load('temporary/scores_0/{0}_score_list.npy'.format(file_id))
-
-    return im, window_centers - 32, score_list
-
-def score_images():
+def score_experimental_images():
     classifier = create_classifier(MODEL_FILE, PRETRAINED)
     ims = get_bounded_ims()
-    for i, (file_id, im) in enumerate(ims.items()): 
-        print('Processing file {0}, {1} of {2}'.format(file_id, i+1, len(ims)))
-        window_centers, score_list = score_image(im, classifier)
-        sp.save('temporary/scores/' + file_id + '_score_list', score_list)
-        sp.save('temporary/scores/' + file_id + '_window_centers', window_centers)    
+    with h5py.File(SCORES_PATH, 'w-') as h5file:
+        score_images(h5file, ims, classifier, WINDOW_WIDTH)
 
+def get_data(file_id):
+    im, truth = get_bounded_im(file_id)
+    with h5py.File(SCORES_PATH, 'r') as h5file:
+        score_array = h5file[file_id]        
 
-def load_score_array(file_id, channel=0):
-    im, centers, scores = get_data(file_id, channel=-1)
-    score_array = make_score_array(1 - scores[:, 0], centers, im.shape[1:])
     return im, score_array
     
 def find_grid_angle(array):
@@ -264,8 +253,8 @@ def measure(im, array):
 
 def measure_all(**kwargs):
     results = []
-    for im_id in test_ids:
-        im, array = load_score_array(im_id, channel=-1)
+    for im_id in TEST_IDS:
+        im, array = get_data(im_id)
         result = measure(im, array, **kwargs)
         results.append(result)
         
@@ -290,11 +279,3 @@ def mean_absolute_errors(results):
         maes.append(sp.mean(sp.absolute(r1 - r2)))
 
     return maes   
-
-def save_results():
-    results = measure_all()
-    corrs = correlations(results)
-    maes = mean_absolute_errors(results)
-    
-    with open('results/experimental_results.pickle', 'w+') as f:
-        cPickle.dump({'correlations': corrs, 'mean_absolute_errors': maes}, f)
