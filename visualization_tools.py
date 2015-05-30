@@ -63,8 +63,8 @@ def two_channel_to_color(im):
     lower = sp.percentile(im, 5)
     upper = sp.percentile(im, 98)   
     
-    channel_0 = sp.clip((im[0] - lower)/(upper - lower), 0, 1)
-    channel_2 = sp.clip((im[1] - lower)/(upper - lower), 0, 1)
+    channel_0 = sp.clip((im[:, :, 0] - lower)/(upper - lower), 0, 1)
+    channel_2 = sp.clip((im[:, :, 1] - lower)/(upper - lower), 0, 1)
     channel_1 = ((channel_0 + channel_2)/2.)
     
     im = sp.array((channel_0, channel_1, channel_2))
