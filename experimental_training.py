@@ -29,7 +29,7 @@ LABEL_ENUM = {'inside': 1,
               'between': 0}
 
 
-labelled_ids = ['3-12_pmt100', '3-16_pmt100']
+LABELLED_FILE_IDS = ['3-12_pmt100', '3-16_pmt100']
 
 def normalize_channel(im):
     lower = sp.percentile(im, 5)
@@ -156,8 +156,8 @@ def make_labelled_sets(centers, test_split=0.1):
     
     return training_centers, training_labels, test_centers, test_labels
             
-def create_caffe_input_file(file_ids, channel=0, width=61):    
-    ims = [get_benchmark_im(file_id)[channel] for file_id in file_ids]
+def create_caffe_input_file(file_ids, width=61):    
+    ims = [get_benchmark_im(file_id) for file_id in file_ids]
     ims = [(im - im.mean())/im.std() for im in ims]
     
     centers = find_centers_from_ims(file_ids)
@@ -165,3 +165,6 @@ def create_caffe_input_file(file_ids, channel=0, width=61):
 
     fill_database('temporary/train_experimental.db', ims, training_centers, training_labels, width)
     fill_database('temporary/test_experimental.db', ims, test_centers, test_labels, width)
+
+def make_training_files():
+    create_caffe_input_file(LABELLED_FILE_IDS)

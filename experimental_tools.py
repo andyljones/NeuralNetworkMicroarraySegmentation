@@ -16,13 +16,10 @@ def get_benchmark_im(file_id):
     filepath = os.path.join(BENCHMARK_FOLDER, file_id + '.tif')
     return sp.log(tifffile.imread(filepath))
 
-def get_bounded_im(file_id, channel=0):
+def get_bounded_im(file_id):
     im = get_benchmark_im(file_id)
     
-    if channel != -1:
-        return im[channel, boundaries[0], boundaries[1]]
-    if channel == -1:
-        return im[:, boundaries[0], boundaries[1]]
+    return im[:, boundaries[0], boundaries[1]]
 
 def get_bounded_ims():
     filenames = [f for f in os.listdir(BENCHMARK_FOLDER) if os.path.splitext(f)[1] == '.tif']

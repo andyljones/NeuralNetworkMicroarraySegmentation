@@ -14,9 +14,9 @@ import skimage.morphology
 
 import caffe_tools as ct
 
-def show_score_array(score_array, fig_and_axes=None, **kwargs):
+def show_image(image, fig_and_axes=None, **kwargs):
     fig, axes = plt.subplots(1,1) if fig_and_axes is None else fig_and_axes
-    axes.imshow(score_array, aspect='equal', cmap=plt.cm.Blues, interpolation='nearest', **kwargs)  
+    axes.imshow(image, aspect='equal', cmap=plt.cm.Blues, interpolation='nearest', **kwargs)  
     axes.set_xticks([])
     axes.set_yticks([])
         
@@ -31,6 +31,19 @@ def visualize_filters(layername, model_file, pretrained, i=0):
         ax.imshow(f[0], interpolation='nearest', cmap=plt.cm.Blues, vmin=filters.min(), vmax=filters.max())
 
     return filters
+    
+def show_hough_lines(im, angles, dists):
+    fig, ax = show_image(im)
+    for angle, dist in zip(angles, dists):
+        xs = sp.array([0, im.shape[1]])
+        ys = -xs/sp.tan(angle) + dist/sp.sin(angle)
+    
+        ax.plot(xs, ys, 'r')
+    
+    ax.set_xlim(0, im.shape[1])
+    ax.set_ylim(im.shape[0], 0)
+    
+    return fig, ax    
 
 def find_borders(array, threshold=0.65):
     boolean_array = (array > threshold)

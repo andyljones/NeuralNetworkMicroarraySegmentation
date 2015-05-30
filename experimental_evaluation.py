@@ -7,8 +7,6 @@ Created on Sat May 30 12:19:49 2015
 
     
 import scipy as sp
-#import caffe
-import caffe_tools as ct
 import skimage
 import itertools as it
 import scipy.ndimage
@@ -17,13 +15,7 @@ import cPickle
 import seaborn as sns
 
 from experimental_tools import get_bounded_im, get_bounded_ims
-
-def get_data(file_id, channel=0):
-    im = get_bounded_im(file_id, channel=channel)
-    window_centers = sp.load('temporary/scores_0/{0}_window_centers.npy'.format(file_id))
-    score_list = sp.load('temporary/scores_0/{0}_score_list.npy'.format(file_id))
-
-    return im, window_centers - 32, score_list
+from caffe_tools import create_classifier, score_image, make_score_array
 
 example_file_id = '3-12_pmt100'
 
@@ -34,19 +26,26 @@ PRETRAINED = 'caffe_definitions/experimental_2_384k.caffemodel'
 
 sns.set_context({'figure.figsize': (18,18)})
 
+def get_data(file_id, channel=0):
+    im = get_bounded_im(file_id, channel=channel)
+    window_centers = sp.load('temporary/scores_0/{0}_window_centers.npy'.format(file_id))
+    score_list = sp.load('temporary/scores_0/{0}_score_list.npy'.format(file_id))
+
+    return im, window_centers - 32, score_list
+
 def score_images():
-    classifier = ct.create_classifier(MODEL_FILE, PRETRAINED)
+    classifier = create_classifier(MODEL_FILE, PRETRAINED)
     ims = get_bounded_ims()
     for i, (file_id, im) in enumerate(ims.items()): 
         print('Processing file {0}, {1} of {2}'.format(file_id, i+1, len(ims)))
-        window_centers, score_list = ct.score_image(im, classifier)
+        window_centers, score_list = score_image(im, classifier)
         sp.save('temporary/scores/' + file_id + '_score_list', score_list)
         sp.save('temporary/scores/' + file_id + '_window_centers', window_centers)    
 
 
 def load_score_array(file_id, channel=0):
     im, centers, scores = get_data(file_id, channel=-1)
-    score_array = ct.make_score_array(1 - scores[:, 0], centers, im.shape[1:])
+    score_array = make_score_array(1 - scores[:, 0], centers, im.shape[1:])
     return im, score_array
     
 def find_grid_angle(array):
@@ -69,19 +68,6 @@ def find_lines_at_angle(array, angle):
     hspace, angles, dists = skimage.transform.hough_line_peaks(acc, thetas, rs, threshold=threshold, min_distance=5, min_angle=21)
     
     return angles, dists
-    
-def show_hough_lines(im, angles, dists):
-    fig, ax = ct.show_image(im)
-    for angle, dist in zip(angles, dists):
-        xs = sp.array([0, im.shape[1]])
-        ys = -xs/sp.tan(angle) + dist/sp.sin(angle)
-    
-        ax.plot(xs, ys, 'r')
-    
-    ax.set_xlim(0, im.shape[1])
-    ax.set_ylim(im.shape[0], 0)
-    
-    return fig, ax    
 
 def draw_hough_line(array, theta, r, value=1):
     h, w = array.shape    
