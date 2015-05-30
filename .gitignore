@@ -1,1 +1,9 @@
+# Python files
 *.pyc
+
+#Vim files
+*.swp
+
+# Directories of artefacts
+sources/*
+temporary/*
