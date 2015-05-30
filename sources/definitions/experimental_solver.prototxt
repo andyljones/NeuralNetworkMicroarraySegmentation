@@ -1,4 +1,4 @@
-net: "sources/definitions/model.prototxt"
+net: "sources/definitions/experimental_model.prototxt"
 test_iter: 100
 test_interval: 1000
 base_lr: 0.01

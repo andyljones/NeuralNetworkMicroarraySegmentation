@@ -3,7 +3,7 @@ layers {
   name: "window_and_label"
   type: DATA
   data_param {
-    source: "temporary/train_simulated.db"
+    source: "temporary/train_experimental.db"
     backend: LMDB
     batch_size: 100
   }
@@ -15,7 +15,7 @@ layers {
   name: "window_and_label"
   type: DATA
   data_param {
-    source: "temporary/test_simulated.db"
+    source: "temporary/test_experimental.db"
     backend: LMDB
     batch_size: 100
   }
