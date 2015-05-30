@@ -6,7 +6,7 @@ Created on Sat May 30 14:45:10 2015
 """
 import scipy as sp
 
-from simulated_tools import get_simulated_im
+from simulated_tools import get_simulated_im, WINDOW_WIDTH
 from caffe_tools import fill_database
 
 TRAINING_IDS = ['exp_low ({0})'.format(i) for i in range(1, 25)]
@@ -96,7 +96,7 @@ def make_labelled_sets(centers, test_split=0.1):
     
     return training_centers, training_labels, test_centers, test_labels
     
-def create_caffe_input_file(file_ids, width=41):    
+def create_caffe_input_file(file_ids, width):    
     im_padding = ((width/2, width/2), (width/2, width/2), (0, 0))
     ims = [get_simulated_im(file_id)[0] for file_id in file_ids]
     ims = [(im - im.mean())/im.std() for im in ims]
@@ -113,4 +113,4 @@ def create_caffe_input_file(file_ids, width=41):
     fill_database('temporary/test_simulated.db', ims, test_centers, test_labels, width)
     
 def make_training_files():
-    create_caffe_input_file(TRAINING_IDS)
+    create_caffe_input_file(TRAINING_IDS, WINDOW_WIDTH)

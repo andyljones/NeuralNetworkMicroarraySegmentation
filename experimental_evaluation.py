@@ -13,7 +13,7 @@ import scipy.ndimage
 import skimage.transform
 import h5py
 
-from experimental_tools import get_bounded_im, get_bounded_ims
+from experimental_tools import get_bounded_im, get_bounded_ims, WINDOW_WIDTH
 from caffe_tools import create_classifier, score_images
 
 TEST_IDS = ['3-{0}_pmt100'.format(i) for i in range(13, 17)]
@@ -22,7 +22,6 @@ DEFINITION_PATH = r'caffe_definitions/experimental_deploy.prototxt'
 MODEL_PATH = 'caffe_definitions/experimental_2_384k.caffemodel'
 
 SCORES_PATH = 'temporary/scores/simulated_scores.hdf5' 
-WINDOW_WIDTH = 61
 
 def score_experimental_images():
     classifier = create_classifier(DEFINITION_PATH, MODEL_PATH)

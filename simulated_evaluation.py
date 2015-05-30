@@ -7,7 +7,7 @@ Created on Sat May 30 14:45:03 2015
 import scipy as sp
 import h5py
 
-from simulated_tools import get_simulated_im, get_simulated_ims
+from simulated_tools import get_simulated_im, get_simulated_ims, WINDOW_WIDTH
 from caffe_tools import create_classifier, score_images
 
 TEST_LOW_IDS = ['exp_low ({0})'.format(i) for i in range(25, 50)] 
@@ -17,7 +17,6 @@ DEFINITION_PATH = 'sources/definitions/simulated_deploy.prototxt'
 MODEL_PATH = 'temporary/models/simulated_iter_20000.caffemodel'
 
 SCORES_PATH = 'temporary/scores/simulated_scores.hdf5' 
-WINDOW_WIDTH = 41
 
 def score_simulated_images():
     classifier = create_classifier(DEFINITION_PATH, MODEL_PATH)

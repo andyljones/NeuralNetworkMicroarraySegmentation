@@ -9,6 +9,7 @@ import os
 import scipy as sp
 
 SIMULATED_BENCHMARK_FOLDER = 'sources/simulated'
+WINDOW_WIDTH = 41
 
 def get_simulated_im(file_id):
     filepath = os.path.join(SIMULATED_BENCHMARK_FOLDER, file_id + '.mat')
