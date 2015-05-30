@@ -124,7 +124,6 @@ def score_windows(window_generator, model, total_count=0):
     results = []    
     while True:
         windows = list(it.islice(window_generator, 4096))
-#        pdb.set_trace()
         if not windows:
             break
         

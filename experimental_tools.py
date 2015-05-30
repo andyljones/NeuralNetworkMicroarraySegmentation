@@ -14,7 +14,7 @@ boundaries = [slice(650,-150), slice(1900,-500)]
 
 def get_benchmark_im(file_id):
     filepath = os.path.join(BENCHMARK_FOLDER, file_id + '.tif')
-    return sp.log(tifffile.imread(filepath))
+    return sp.rollaxis(sp.log(tifffile.imread(filepath)), 0, 3)
 
 def get_bounded_im(file_id):
     im = get_benchmark_im(file_id)
