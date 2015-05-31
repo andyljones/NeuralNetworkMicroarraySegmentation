@@ -37,6 +37,7 @@ LABEL_ENUM = {'inside': 1,
               'block_border': 0,
               'between': 0}
 
+"""IDs of the hand-labelled images"""
 LABELLED_FILE_IDS = ['3-12_pmt100', '3-16_pmt100']
     
     
@@ -188,6 +189,6 @@ def create_caffe_input_files(file_ids, width):
     fill_database('temporary/test_experimental.db', ims, test_centers, test_labels, width)
 
 def make_training_files():
-    """Use the hand-labels corresponding to t``LABELLED_FILE_IDS`` to create LMDB databases containing training and test
+    """Use the hand-labels corresponding to ``LABELLED_FILE_IDS`` to create LMDB databases containing training and test
     sets for a Caffe neural network."""
     create_caffe_input_files(LABELLED_FILE_IDS, WINDOW_WIDTH)
