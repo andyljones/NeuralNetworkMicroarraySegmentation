@@ -4,6 +4,7 @@
 #Editor files
 *.swp
 *~
+*.xcf
 
 # Caffe files
 *.solverstate
