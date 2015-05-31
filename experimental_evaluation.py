@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat May 30 12:19:49 2015
+This module uses a trained neural network to segment experimental microarray images into foreground and background 
+pixels. It then uses the segmentation to measure the expression ratio in each spot.
 
-@author: andy
+In detail, ``score_experimental_images`` feeds the experimental images through the NN and stores the calculated 
+score array in a HDF5 file. The ``measure_all`` function reads the segmentations out of the HDF5 file and uses them to 
+measure the expression ratios. 
+
+``measure_all`` finds the center of each logically-addressed spot in the score array using a simple Hough-lines based 
+heuristic. It then assigns each connected chunk of foreground pixels to belong to the spot with the nearest center.
 """
-
     
 import scipy as sp
 import skimage
@@ -16,20 +21,27 @@ import h5py
 from experimental_tools import get_bounded_im, get_bounded_ims, WINDOW_WIDTH
 from caffe_tools import create_classifier, score_images
 
-TEST_IDS = ['3-{0}_pmt100'.format(i) for i in range(13, 17)]
+"""The IDs of the files to be used for testing."""
+TEST_IDS = ['3-{0}_pmt100'.format(i) for i in range(12, 17)]
 
+"""The path to the file describing the Caffe classifier."""
 DEFINITION_PATH = r'sources/definitions/experimental_deploy.prototxt'
+
+"""The path to the file containing the trained Caffe model"""
 MODEL_PATH = 'temporary/models/experimental_iter_60000.caffemodel'
 
+"""The path to the file containing the score arrays for each image"""
 SCORES_PATH = 'temporary/scores/experimental_scores.hdf5' 
 
 def score_experimental_images():
+    """Scores each pixel in each experimental image using a Caffe classifier, and stores the results in a HDF5 file."""
     classifier = create_classifier(DEFINITION_PATH, MODEL_PATH)
     ims = get_bounded_ims()
     with h5py.File(SCORES_PATH, 'w-') as h5file:
         score_images(h5file, ims, classifier, WINDOW_WIDTH)
 
 def get_data(file_id):
+    """Gets the image and the score array associated with ``file_id``"""
     im, truth = get_bounded_im(file_id)
     with h5py.File(SCORES_PATH, 'r') as h5file:
         score_array = h5file[file_id]        
@@ -37,6 +49,7 @@ def get_data(file_id):
     return im, score_array
     
 def find_grid_angle(array):
+    """Finds the angle from horizontal of a microarray segmentation given by ``score_array``."""
     array = (array > 0.5)
     
     theta_ranges = sp.pi/2 + sp.linspace(-0.25, 0.25, 501)
@@ -48,6 +61,9 @@ def find_grid_angle(array):
     return most_common_angle
     
 def find_lines_at_angle(array, angle):
+    """
+    Finds a set of prominent, well-spaced Hough lines in the ``array`` at roughly ``angle`` from horizontal.
+    """
     array = (array > 0.5)
     
     threshold = sp.sqrt((sp.sin(angle)*array.shape[1])**2 + (sp.cos(angle)*array.shape[0])**2)/15
@@ -58,6 +74,7 @@ def find_lines_at_angle(array, angle):
     return angles, dists
 
 def draw_hough_line(array, theta, r, value=1):
+    """Replaces all the pixels in ``array`` that fall under a Hough line with parameters ``(theta, r) with ``value``."""
     h, w = array.shape    
     
     x_bounds = [r/sp.cos(theta) - (h - 1)*sp.tan(theta), r/sp.cos(theta)]
@@ -71,6 +88,8 @@ def draw_hough_line(array, theta, r, value=1):
     array[line_indices] = value
 
 def draw_hough_lines(shape, angles, dists):
+    """Creates a ``-1``-filled array of ``shape`` and draws the Hough line described by each``(angle, dist)`` pair
+    onto the array with value ``1``"""
     array = -sp.ones(shape)
     
     for theta, r in zip(angles, dists):
@@ -79,6 +98,8 @@ def draw_hough_lines(shape, angles, dists):
     return array
 
 def draw_enumerated_lines(shape, thetas, rs):
+    """Creates a ``-1``-filled array of ``shape``, sorts the Hough lines described by ``(thetas, rs)`` in order of 
+    ``rs``, then draws them onto the array with the ``i``th line being drawn with value ``i``."""
     array = -sp.ones(shape)
     sorting_idxs = sp.argsort(rs)
     rs = rs[sorting_idxs]
@@ -90,6 +111,8 @@ def draw_enumerated_lines(shape, thetas, rs):
     return array
 
 def find_hough_intersections(array):
+    """Estimates a set of horizontal and vertical Hough lines from ``array`` and returns two arrays; one containing the
+    physical locations of each intersection, and one containing the logical coordinates of each intersection."""
     grid_angle = find_grid_angle(array > 0.5)
     x_thetas, x_rs = find_lines_at_angle(array > 0.5, grid_angle)
     y_thetas, y_rs = find_lines_at_angle(array > 0.5, grid_angle + sp.pi/2)
@@ -106,10 +129,19 @@ def find_hough_intersections(array):
     return physical_indices, logical_indices
 
 def find_centroids(array):
+    """Finds the centroid of each connected area in ``array``."""
     labelled = sp.ndimage.label(array)[0] - 1
     foreground_indices = sp.indices(labelled.shape)[:, labelled > -1]
     labels_of_indices = labelled[labelled > -1]
     
+    # What's happening here is that there are thousands of connected areas in ``array``, and finding the centroid of 
+    # each one by manually going ``indices[:, labelled == label]`` is really slow. Instead, we (implicitly) build a 
+    # tree. Each node ``n`` in the tree has a label. That node finds the indices corresponding to its own label, then
+    # delegates finding the indices corresponding to all smaller labels to its left child, and the indices corresponding
+    # to all larger labels to it's right child.
+    #
+    # Update: I've since learnt about scipy.ndimage.labelled_comprehension. That's a much better way to do this! Leaving
+    # this where it is though since well, it works and it's inefficiency is not currently a bottleneck.
     def get_centroids(indices, labels):
         if len(labels) > 0:
             pivot = labels[len(labels)/2]
@@ -138,16 +170,19 @@ def find_centroids(array):
     return labelled, centroids
     
 def make_index_map(shape, indices):
+    """Creates a ``-1``-filled array of ``shape``, then sets the location at ``indices[:, i]`` to ``i``."""
     result = -sp.ones(shape, dtype=int)
     result[indices[0], indices[1]] = range(indices.shape[1])
     return result
     
 def shape_containing_indices(*indices):
+    """Given one or more lists of indices, finds the smallest shape that could contain them"""
     indices = sp.concatenate(indices, 1)
     maxes = indices.max(1)
     return maxes + 1
 
 def indices_to_boolean_array(indices, shape=None):
+    """Creates a zeroed boolean array with every location in ``indices`` set to True"""
     shape = shape_containing_indices(indices) if shape is None else shape
     array = sp.zeros(shape, dtype=bool)
     array[indices[0], indices[1]] = True
@@ -155,6 +190,8 @@ def indices_to_boolean_array(indices, shape=None):
     return array
 
 def find_too_distant_centroids(intersection_pis, centroid_is, threshold=8):
+    """Returns a mask indicating which indices in ``centroid_is`` are more than ``threshold`` distant from an 
+    intersection."""
     shape = shape_containing_indices(intersection_pis, centroid_is)
     intersections = indices_to_boolean_array(intersection_pis, shape)
     
@@ -166,6 +203,8 @@ def find_too_distant_centroids(intersection_pis, centroid_is, threshold=8):
     return too_distant_centroids
     
 def assign_centroids_to_intersections(intersection_pis, centroid_is):
+    """Returns an array where the ``i``th entry is the index of the closest intersection in ``intersection_pis`` to the
+    ``i`th centroid in ``centroid_is``."""
     shape = shape_containing_indices(intersection_pis, centroid_is)
     intersections = indices_to_boolean_array(intersection_pis, shape)
     
@@ -178,18 +217,21 @@ def assign_centroids_to_intersections(intersection_pis, centroid_is):
     return number_of_nearest_intersection
 
 def expand_labels(labelled, array):
+    """Replaces each pixel >0.5 in ``array`` with the label of the nearest non-zero pixel in ``labelled``."""
     nearest_label_indices = sp.ndimage.distance_transform_edt((labelled == -1), return_distances=False, return_indices=True)
     nearest_label = labelled[nearest_label_indices[0], nearest_label_indices[1]]
     
     return (array > 0.5)*nearest_label
 
 def suppress_labels(labels, labelled):
+    """Sets each pixel in a copy of ``labelled`` with a label from ``labels`` to -1"""
     labelled = sp.copy(labelled)
     to_suppress = sp.in1d(labelled, labels).reshape(labelled.shape)
     labelled[to_suppress] = -1
     return labelled
 
 def find_multi_centroids(nearest_intersection):
+    """Finds the centroids which map non-injectively onto the nearest intersection."""
     numbers = [[] for _ in range(max(nearest_intersection) + 1)]
     for i in range(len(nearest_intersection)):
         numbers[nearest_intersection[i]].append(i)
@@ -199,16 +241,20 @@ def find_multi_centroids(nearest_intersection):
     return multiple
     
 def make_labelling_consistent(labelling, nearest_intersections):
+    """Removes any label from a copy of ``labelling`` that is stopping ``nearest_intersections`` from being an 
+    injective map from labels onto intersections."""
     labelling = sp.copy(labelling)
     multiple = find_multi_centroids(nearest_intersections)
     for labels in multiple:
-        label_to_use = labels[0]
+        label_to_use = labels[0] #TODO: Use the largest label rather than just the first
         for label in labels:
             labelling[labelling == label] = label_to_use
             
     return labelling
 
 def label_by_logical_index(array):
+    """Labels a score array with a logical indexing. If a pixel belongs to the (i,j)th spot in the grid, then the label
+    of that spot in ``consistent_labelling`` will map to ``(i, j)`` in ``nearest_intersection_lis``."""
     labelling, centroid_pis = find_centroids(array > 0.5)    
     intersection_pis, intersection_lis = find_hough_intersections(array)
     
@@ -222,6 +268,8 @@ def label_by_logical_index(array):
     return consistent_labelling, nearest_intersection_lis
     
 def measure_labelling(im, labelling, lis):
+    """Given a one-channel image, a labelling and a map of labels onto logical indices, returns an array
+    with the median value of the part of ``im`` labelled ``l`` stored at location ``lis[l]``."""
     labels = sp.unique(labelling)
     labels = labels[labels != -1]    
     
@@ -235,10 +283,13 @@ def measure_labelling(im, labelling, lis):
     return results
 
 def morphological_background(im):
+    """Estimates the background at each pixel by taking the minimum over a 50-pixel-radius disk."""
     opened = sp.ndimage.grey_opening(im, 50)
     return opened
     
 def measure(im, array):
+    """Calculates the morphologically-corrected expression ratio for each spot in ``im`` using a segmentation provided
+    by ``array``."""
     labelling, lis = label_by_logical_index(array)
     
     measures = []
@@ -246,15 +297,16 @@ def measure(im, array):
         spot_measures = measure_labelling(channel, labelling, lis)
         background = morphological_background(channel)
         background_measures = measure_labelling(background, labelling, lis) 
-        measures.append(sp.exp(spot_measures) - sp.exp(background_measures))
+        measures.append(sp.exp(spot_measures) - sp.exp(background_measures)) # The images are read in in logspace
         
     return measures[0]/measures[1]
 
-def measure_all(**kwargs):
+def measure_all():
+    """Calculates expression ratios for each spot in each experimental image, using segmentations from the HDF5 file."""
     results = []
     for im_id in TEST_IDS:
         im, array = get_data(im_id)
-        result = measure(im, array, **kwargs)
+        result = measure(im, array)
         results.append(result)
         
     valid_locations = ~reduce(sp.bitwise_or, map(sp.isnan, results))
@@ -264,12 +316,14 @@ def measure_all(**kwargs):
     return valid_results
     
 def correlations(results):
+    """Calculates the interreplicate pairwise correlations among measurements generated by ``measure_all``"""
     valid_locations = ~sp.isnan(results.sum(0)) & sp.isfinite(results.sum(0))
     flat_results = results[:, valid_locations].reshape((4, -1))
     corrs = sp.corrcoef(flat_results)
     return corrs
     
 def mean_absolute_errors(results):
+    """Calculates the interreplicate pairwise mean absolute errors among measurements generated by ``measure_all``"""
     valid_locations = ~sp.isnan(results.sum(0)) & sp.isfinite(results.sum(0))
     flat_results = results[:, valid_locations].reshape((4, -1))
     
