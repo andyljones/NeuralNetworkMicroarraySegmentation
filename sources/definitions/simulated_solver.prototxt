@@ -3,12 +3,12 @@ test_iter: 100
 test_interval: 1000
 base_lr: 0.01
 momentum: 0.9
-weight_decay: 0.0001
+weight_decay: 0.0005
 lr_policy: "step"
-gamma: 0.5
-stepsize: 20000
+gamma: 0.1
+stepsize: 16000
 display: 100
-max_iter: 400000
-snapshot: 20000
+max_iter: 48000
+snapshot: 16000
 snapshot_prefix: "temporary/models/simulated"
 solver_mode: GPU

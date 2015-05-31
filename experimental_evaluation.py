@@ -28,7 +28,7 @@ TEST_IDS = ['3-{0}_pmt100'.format(i) for i in range(13, 17)]
 DEFINITION_PATH = r'sources/definitions/experimental_deploy.prototxt'
 
 """The path to the file containing the trained Caffe model"""
-MODEL_PATH = 'temporary/models/experimental_iter_60000.caffemodel'
+MODEL_PATH = 'temporary/models/experimental_iter_24000.caffemodel'
 
 """The path to the file containing the score arrays for each image"""
 SCORES_PATH = 'temporary/scores/experimental_scores.hdf5' 

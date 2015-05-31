@@ -17,7 +17,7 @@ TEST_GOOD_IDS = ['exp_good ({0})'.format(i) for i in range(1, 50)]
 DEFINITION_PATH = 'sources/definitions/simulated_deploy.prototxt'
 
 """The path to the file containing the trained Caffe model"""
-MODEL_PATH = 'temporary/models/simulated_iter_20000.caffemodel'
+MODEL_PATH = 'temporary/models/simulated_iter_48000.caffemodel'
 
 """The path to the file containing the score arrays for each image"""
 SCORES_PATH = 'temporary/scores/simulated_scores.hdf5' 
