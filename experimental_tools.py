@@ -7,8 +7,13 @@ import tifffile
 import scipy as sp
 import os
 
+"""The folder containing the experimental images"""
 IMAGE_FOLDER = 'sources/experimental'
+
+"""The width of the window to use when classifying a pixel as foreground or background"""
 WINDOW_WIDTH = 61
+
+"""The slice of the experimental images that actually contains spots"""
 boundaries = [slice(650,-150), slice(1900,-500)]
 
 def get_benchmark_im(file_id):
