@@ -46,7 +46,7 @@ def visualize_image_for_hand_labelling(file_id):
     im = get_bounded_im(file_id)
     im = two_channel_to_color(im)
     
-    target_path = os.path.join(LABELS_FOLDER, '{}_corrected.tif'.format(file_id))
+    target_path = os.path.join(LABELS_FOLDER, '{}_corrected.bmp'.format(file_id))
     tifffile.imsave(target_path, im)
 
 def equal_color_mask(im, color):
@@ -55,7 +55,7 @@ def equal_color_mask(im, color):
 
 def get_hand_labels(file_id):
     """Returns the spots and areas that have been hand labelled for ``file_id``"""
-    labels_filename = file_id + '_corrected_labelled.tif' 
+    labels_filename = file_id + '_corrected_labelled.bmp' 
     labels_path = os.path.join(LABELS_FOLDER, labels_filename)
     labels = sp.ndimage.imread(labels_path)
     
@@ -179,7 +179,7 @@ def create_caffe_input_files(file_ids, width):
     is the size of the windows to use.
     
     The databases can be found in the ``temporary`` directory."""    
-    ims = [get_benchmark_im(file_id) for file_id in file_ids]
+    ims = [get_bounded_im(file_id) for file_id in file_ids]
     ims = [(im - im.mean())/im.std() for im in ims]
     
     centers = find_centers_from_ims(file_ids, width)
