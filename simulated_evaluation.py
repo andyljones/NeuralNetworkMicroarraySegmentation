@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat May 30 14:45:03 2015
-
-@author: andy
+This module uses a trained neural network to segment simulated microarray images into foreground and background 
+pixels. It can then calculate the error rate and discrepency distances from the results.
 """
 import scipy as sp
 import h5py
@@ -10,21 +9,28 @@ import h5py
 from simulated_tools import get_simulated_im, get_simulated_ims, WINDOW_WIDTH
 from caffe_tools import create_classifier, score_images
 
+"""File IDs to be used for testing"""
 TEST_LOW_IDS = ['exp_low ({0})'.format(i) for i in range(25, 50)] 
 TEST_GOOD_IDS = ['exp_good ({0})'.format(i) for i in range(1, 50)]
 
+"""The path to the file describing the Caffe classifier."""
 DEFINITION_PATH = 'sources/definitions/simulated_deploy.prototxt'
+
+"""The path to the file containing the trained Caffe model"""
 MODEL_PATH = 'temporary/models/simulated_iter_20000.caffemodel'
 
+"""The path to the file containing the score arrays for each image"""
 SCORES_PATH = 'temporary/scores/simulated_scores.hdf5' 
 
 def score_simulated_images():
+    """Scores each pixel in each simulated image using a Caffe classifier, and stores the results in a HDF5 file."""
     classifier = create_classifier(DEFINITION_PATH, MODEL_PATH)
     ims, _ = get_simulated_ims()
     with h5py.File(SCORES_PATH, 'w-') as h5file:
         score_images(h5file, ims, classifier, WINDOW_WIDTH)          
 
 def get_data(file_id):
+    """Gets the image, ground truth and the score array associated with ``file_id``"""
     im, truth = get_simulated_im(file_id)
     with h5py.File(SCORES_PATH, 'r') as h5file:
         score_array = h5file[file_id]        
@@ -32,6 +38,8 @@ def get_data(file_id):
     return im, truth, score_array
 
 def calculate_error_rate(file_ids, threshold=0.65):
+    """Calcuates the segmentation error rate when the threshold for predicting a pixel as foreground is set at 
+    ``threshold``."""
     error_rates = []
     
     for file_id in file_ids:
@@ -43,6 +51,8 @@ def calculate_error_rate(file_ids, threshold=0.65):
     return sp.median(error_rates)
 
 def calculate_discrepency_distance(file_ids, threshold=0.65):
+    """Calcuates the segmentation discrepency distance when the threshold for predicting a pixel as foreground is set 
+    at ``threshold``."""
     discrepency_distances = []        
     
     for file_id in file_ids:
