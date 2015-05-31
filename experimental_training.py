@@ -38,12 +38,12 @@ LABEL_ENUM = {'inside': 1,
               'between': 0}
 
 """IDs of the hand-labelled images"""
-LABELLED_FILE_IDS = ['3-12_pmt100', '3-16_pmt100']
+LABELLED_FILE_IDS = ['3-12_pmt100']
     
     
 def visualize_image_for_hand_labelling(file_id):
     """Saves out a visualization of the image ``file_id`` that's appropriate for hand-labelling"""
-    im = get_bounded_im(file_id, channel=-1)
+    im = get_bounded_im(file_id)
     im = two_channel_to_color(im)
     
     target_path = os.path.join(LABELS_FOLDER, '{}_corrected.tif'.format(file_id))
@@ -55,7 +55,7 @@ def equal_color_mask(im, color):
 
 def get_hand_labels(file_id):
     """Returns the spots and areas that have been hand labelled for ``file_id``"""
-    labels_filename = file_id + '_corrected_labelled.png' 
+    labels_filename = file_id + '_corrected_labelled.tif' 
     labels_path = os.path.join(LABELS_FOLDER, labels_filename)
     labels = sp.ndimage.imread(labels_path)
     

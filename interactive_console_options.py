@@ -1,8 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-Created on Sat May 30 20:01:23 2015
-
-@author: andy
+A handful of settings that are useful for interactive work. Import the module at the console to activate them.
 """
 
 import scipy as sp

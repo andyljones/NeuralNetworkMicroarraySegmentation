@@ -22,7 +22,7 @@ from experimental_tools import get_bounded_im, get_bounded_ims, WINDOW_WIDTH
 from caffe_tools import create_classifier, score_images
 
 """The IDs of the files to be used for testing."""
-TEST_IDS = ['3-{0}_pmt100'.format(i) for i in range(12, 17)]
+TEST_IDS = ['3-{0}_pmt100'.format(i) for i in range(13, 17)]
 
 """The path to the file describing the Caffe classifier."""
 DEFINITION_PATH = r'sources/definitions/experimental_deploy.prototxt'

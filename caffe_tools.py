@@ -11,7 +11,6 @@ import datetime
 import itertools as it
 import logging
 
-
 def get_window(im, center, width):
     """Returns a window on ``im`` centered on ``center`` and with width ``width``"""
     if width % 2 == 0:
