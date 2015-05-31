@@ -218,7 +218,7 @@ def score_images(h5file, ims, model, width):
     for i, (file_id, im) in enumerate(ims.items()): 
         logging.info('Processing file {0}, {1} of {2}'.format(file_id, i+1, len(ims)))
         window_centers, score_list = score_image(im, model, width=width)
-        score_array = make_score_array(window_centers, score_list[:, 1], im.shape[:2])
+        score_array = make_score_array(score_list[:, 1], window_centers, im.shape[:2])
         h5file[file_id] = score_array  
 
 def create_classifier(definition_path, model_path):
