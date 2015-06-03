@@ -37,8 +37,7 @@ def score_experimental_images():
     """Scores each pixel in each experimental image using a Caffe classifier, and stores the results in a HDF5 file."""
     classifier = create_classifier(DEFINITION_PATH, MODEL_PATH)
     ims = get_bounded_ims()
-    with h5py.File(SCORES_PATH, 'w-') as h5file:
-        score_images(h5file, ims, classifier, WINDOW_WIDTH)
+    score_images(SCORES_PATH, ims, classifier, WINDOW_WIDTH)
 
 def get_data(file_id):
     """Gets the image and the score array associated with ``file_id``"""

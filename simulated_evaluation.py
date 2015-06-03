@@ -26,8 +26,7 @@ def score_simulated_images():
     """Scores each pixel in each simulated image using a Caffe classifier, and stores the results in a HDF5 file."""
     classifier = create_classifier(DEFINITION_PATH, MODEL_PATH)
     ims, _ = get_simulated_ims()
-    with h5py.File(SCORES_PATH, 'w-') as h5file:
-        score_images(h5file, ims, classifier, WINDOW_WIDTH)          
+    score_images(SCORES_PATH, ims, classifier, WINDOW_WIDTH)          
 
 def get_data(file_id):
     """Gets the image, ground truth and the score array associated with ``file_id``"""

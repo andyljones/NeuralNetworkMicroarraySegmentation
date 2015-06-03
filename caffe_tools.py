@@ -10,6 +10,7 @@ import os
 import datetime
 import itertools as it
 import logging
+import h5py
 
 def get_window(im, center, width):
     """Returns a window on ``im`` centered on ``center`` and with width ``width``"""
@@ -197,16 +198,16 @@ def score_image(im, model, width):
     
     return unpadded_window_centers, score_list
 
-def score_images(h5file, ims, model, width):
+def score_images(h5file_path, ims, model, width):
     """
     Scores every pixel in each im of ``ims`` by applying ``model`` to windows of ``width`` about each pixel, and 
     stores the results as arrays in ``h5file``.
     
     Parameters
     ----------
-    h5file : h5py.File
-        A HDF5 file object that the score arrays will be stored in. The results for image ``file_id`` will be stored at
-        ``h5file[file_id]``.
+    h5file_path : string
+        A path to the HDF5 file that the score arrays will be stored in. The results for image ``file_id`` will be 
+        stored at under the key ``file_id``.
     ims : dict
         A dictionary of ``(file_id, image)`` pairs. 
     model : caffe.Classifier
@@ -218,7 +219,9 @@ def score_images(h5file, ims, model, width):
         logging.info('Processing file {0}, {1} of {2}'.format(file_id, i+1, len(ims)))
         window_centers, score_list = score_image(im, model, width=width)
         score_array = make_score_array(score_list[:, 1], window_centers, im.shape[:2])
-        h5file[file_id] = score_array  
+        
+        with h5py.File(h5file_path) as h5file:
+            h5file[file_id] = score_array  
 
 def create_classifier(definition_path, model_path):
     """Creates a ``caffe.Classifier`` from the .prototxt at ``definition_path`` and the .modelfile at ``model_path``."""
