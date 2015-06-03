@@ -1,5 +1,9 @@
 This is the companion code for the paper ["Segmenting Microarrays with Deep Neural Networks"](https://drive.google.com/open?id=0B41YdZCna0v1c0dydDlEMUxWVDg&authuser=0).
 
+<p align="center">
+<img src="http://imgur.com/i2mJSdf"/>
+</p>
+
 #### Installation 
 To use this code, you'll need to
  - Install [Caffe](http://caffe.berkeleyvision.org/), along with its Python interface. Be warned that you should have a compute-capable GPU, else training the network and segmenting images will be unfeasibly slow.
