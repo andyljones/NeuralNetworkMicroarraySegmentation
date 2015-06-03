@@ -1,4 +1,4 @@
-This is the companion code for the paper *Segmenting Microarrays with Deep Neural Networks*.
+This is the companion code for the paper ["Segmenting Microarrays with Deep Neural Networks"](https://drive.google.com/open?id=0B41YdZCna0v1c0dydDlEMUxWVDg&authuser=0).
 
 #### Installation 
 To use this code, you'll need to
@@ -21,4 +21,4 @@ from the project directory. Once the classifier is trained (a few hours), it can
 
 from the project directory. Once the classifier is trained (a few hours), it can be used to segment the simulated images by calling `simulated_evaluation.score_simulated_images()`, which will process each image in turn and store the results in `temporary/scores/simulated_scores.hdf5`. This can take a day or more to finish. Once finished, calling `measure_all()` will use the scores from the `.hdf5` file to measure the expression ratio of each spot in each image. Finally, the functions `calculate_error_rate` and `calculate_discrepency_distance` in `simulated_evaluation` can be called on the expression ratios in order to calculate the results reported in the paper.
 
-**Interrupting training early**. In both cases, you can interrupt training the network early (after 40,000 iterations or so) if you don't mind losing a small amount of performance. In that case, set the `MODEL_PATH` in `simulated_evaluation`/`experimental_evaluation` to point towards one of the snapshots that can be found in `temporary/models`.
+**Interrupting training early**. In both cases, you can interrupt training the network early if you don't mind losing a small amount of performance. In that case, set the `MODEL_PATH` in `simulated_evaluation`/`experimental_evaluation` to point towards one of the snapshots that can be found in `temporary/models`.
