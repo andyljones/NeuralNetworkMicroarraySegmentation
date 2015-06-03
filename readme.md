@@ -1,7 +1,7 @@
 This is the companion code for the paper ["Segmenting Microarrays with Deep Neural Networks"](https://drive.google.com/open?id=0B41YdZCna0v1c0dydDlEMUxWVDg&authuser=0).
 
 <p align="center">
-<img src="http://imgur.com/i2mJSdf"/>
+<img src="http://i.imgur.com/i2mJSdf.png"/>
 </p>
 
 #### Installation 
