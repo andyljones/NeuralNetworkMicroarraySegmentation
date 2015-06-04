@@ -1,4 +1,4 @@
-This is the companion code for the paper ["Segmenting Microarrays with Deep Neural Networks"](https://drive.google.com/open?id=0B41YdZCna0v1c0dydDlEMUxWVDg&authuser=0).
+This is the companion code for the paper ["Segmenting Microarrays with Deep Neural Networks"](http://biorxiv.org/content/early/2015/06/03/020404).
 
 <p align="center">
 <img src="http://i.imgur.com/i2mJSdf.png"/>
